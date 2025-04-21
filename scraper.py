@@ -25,6 +25,17 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        
+        #the domains we are supposed to keep
+        domains = ["ics.uci.edu", "cs.uci.edu", "informatics.uci.edu", "stat.uci.edu"]
+        
+        # check if the domain is valid from the list and then in the today.uci.edu case, 
+        # make sure it has the path that we want to keep too
+        if not (any(parsed.netloc.endswith(domain) for domain in domains) or
+            ("today.uci.edu" in parsed.netloc and 
+             "/department/information_computer_sciences" in parsed.path)):
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
