@@ -58,7 +58,7 @@ def is_valid(url):
 
         # check for crawler traps
         if re.search(r"calendar|/>(year|month|day)=\d+", parsed.path.lower()):
-            return false
+            return False
         
         # check patterns that may indicate a crawler trap
         path_segments = parsed.path.split('/')
@@ -67,7 +67,7 @@ def is_valid(url):
             return False
         
         # check for any repetitions that may indicate a crawler trap
-        if len(set(path_segments)) < len(path_segmenets) / 2:
+        if len(set(path_segments)) < len(path_segments) / 2:
             return False
         
         return not re.match(
