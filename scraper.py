@@ -1,5 +1,9 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+from bs4 import BeautifulSoup # PLEASE INSTALL THIS PACKAGE FOR HTML PARSING
+#by running 'pip install beautifulsoup4' in terminal
+# must also install the lxml parser by running 'pip install lxml' in terminal
+# documentation can be found here: https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -15,7 +19,19 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    return list()
+    
+    hyperlinks = []
+
+    soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
+
+    potential_links = soup.find_all('a', href=True) # with the soup, find all the 'a' tags that have a href
+    just_links = [a['href'] for a in potential_links] # get the hyperlinks themselves without the tags
+
+    for link in just_links:
+        complete_link = urljoin(resp.url, link) # make sure all the links are complete links 
+        hyperlinks.append(complete_link) # add the complete link to the list we will return
+        
+    return hyperlinks
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
