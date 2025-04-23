@@ -5,6 +5,13 @@ from bs4 import BeautifulSoup # PLEASE INSTALL THIS PACKAGE FOR HTML PARSING
 # must also install the lxml parser by running 'pip install lxml' in terminal
 # documentation can be found here: https://www.crummy.com/software/BeautifulSoup/bs4/doc/
 
+from tokenizer import tokenize, computeWordFrequencies, get_longest_page, get_50_most_common
+
+unique_links = set() #to track URL's that we have already seen
+word_count = {} # to store the URL and the word count
+all_word_freq = {} # to store word frequency
+
+
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -20,6 +27,13 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     
+    # checking if there was a problem with the page, if there is we do not return anything
+    if resp.status != 200: 
+        print(f"Error {resp.status} for {url}: {resp.error}")
+        return []
+    
+    print(f"In extract_next_links: {url}")
+
     hyperlinks = []
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
@@ -29,8 +43,30 @@ def extract_next_links(url, resp):
 
     for link in just_links:
         complete_link = urljoin(resp.url, link) # make sure all the links are complete links 
-        hyperlinks.append(complete_link) # add the complete link to the list we will return
-        
+
+        parsed = urlparse(complete_link) # parse the complete link and remove the fragment if it has one
+        if parsed.fragment:
+            complete_link = complete_link.split('#')[0]
+
+        if is_valid(complete_link): # making sure it is within the domains and paths specified
+            hyperlinks.append(complete_link) # add the complete link to the list we will return
+            unique_links.add(complete_link) # add it to the set of unique links (for the deliverable)
+
+    # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE
+
+    text = soup.get_text(separator=' ') # getting all the text from the soup and seperating it so we can use tokenizer
+   
+    tokens = tokenize(text) 
+    word_freq = computeWordFrequencies(tokens)
+
+    word_count[resp.url] = len(tokens) # to get the word count for the page
+    
+    for word in word_freq: # sum up word frequencies
+        if word in word_freq:
+            all_word_freq[word] += word_freq[word]
+        else:
+            all_word_freq[word] = word_freq[word]
+
     return hyperlinks
 
 def is_valid(url):
@@ -83,3 +119,12 @@ def is_valid(url):
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+def print_summary(): # what we need for report
+    print("SUMMARY: -----------------------------------")
+    print(f"Total unique links: {len(unique_links)}")
+    print(f"Page with longest word count: {get_longest_page(word_count)}")
+
+    most_common_words = get_50_most_common(all_word_freq)
+    for word, freq in most_common_words:
+        print(f"{word}: {freq}")
