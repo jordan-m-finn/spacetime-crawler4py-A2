@@ -51,6 +51,24 @@ def is_valid(url):
             ("today.uci.edu" in parsed.netloc and 
              "/department/information_computer_sciences" in parsed.path)):
             return False
+
+        # check if url is too long
+        if len(url) > 2000:
+            return False
+
+        # check for crawler traps
+        if re.search(r"calendar|/>(year|month|day)=\d+", parsed.path.lower()):
+            return False
+        
+        # check patterns that may indicate a crawler trap
+        path_segments = parsed.path.split('/')
+        # might need to adjust threshold during testing
+        if len(path_segments) > 8:
+            return False
+        
+        # check for any repetitions that may indicate a crawler trap
+        if len(set(path_segments)) < len(path_segments) / 2:
+            return False
         
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
