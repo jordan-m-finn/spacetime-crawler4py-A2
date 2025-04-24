@@ -6,6 +6,9 @@ from utils.config import Config
 from crawler import Crawler
 from scraper import print_summary
 
+import multiprocessing
+multiprocessing.set_start_method("fork")
+
 
 def main(config_file, restart):
     cparser = ConfigParser()

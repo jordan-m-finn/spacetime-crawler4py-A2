@@ -33,8 +33,13 @@ def computeWordFrequencies(token_list):
     return word_freq
 
 def get_longest_page(word_count): 
-    longest_page = max(word_count, key=word_count.get) # get the page with the most words
-    return longest_page, word_count[longest_page] # return the page and the number of words in it
+    if not word_count:
+        return "N/A (no pages with words)"
+    longest_page = max(word_count, key=word_count.get)
+    return longest_page, word_count[longest_page]
+
+    #longest_page = max(word_count, key=word_count.get) # get the page with the most words
+    #return longest_page, word_count[longest_page] # return the page and the number of words in it
 
 def get_50_most_common(all_word_freq): 
 
