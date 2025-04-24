@@ -63,7 +63,7 @@ def extract_next_links(url, resp):
     
     for word in word_freq: # sum up word frequencies
         if word in word_freq:
-            all_word_freq[word] += word_freq[word]
+            all_word_freq[word] = all_word_freq.get(word, 0) + word_freq[word]
         else:
             all_word_freq[word] = word_freq[word]
 
