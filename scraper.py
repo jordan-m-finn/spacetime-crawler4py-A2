@@ -10,6 +10,7 @@ from tokenizer import tokenize, computeWordFrequencies, get_longest_page, get_50
 unique_links = set() #to track URL's that we have already seen
 word_count = {} # to store the URL and the word count
 all_word_freq = {} # to store word frequency
+subdomain_count = {} # counting the subdomains for uci.edu
 
 
 def scraper(url, resp):
@@ -40,26 +41,22 @@ def extract_next_links(url, resp):
 
     text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
 
-    # all the http errors we are going to check for on the page (from the list of errors in assignment spec)
+    # some common errors that we can check for on the page
     http_errors = set([
-    "100 continue", "101 switching protocols",
-    "200 ok", "201 created", "202 accepted", 
-    "203 non-authoritative information", "204 no content", 
-    "205 reset content", "206 partial content",
-    "300 multiple choices", "301 moved permanently", 
-    "302 found", "303 see other", "304 not modified", 
-    "305 use proxy", "306 (unused)", "307 temporary redirect",
-    "400 bad request", "401 unauthorized", "402 payment required", 
-    "403 forbidden", "404 not found", "405 method not allowed", 
-    "406 not acceptable", "407 proxy authentication required", 
-    "408 request timeout", "409 conflict", "410 gone", 
-    "411 length required", "412 precondition failed", "413 request entity too large", 
-    "414 request-uri too long", "415 unsupported media type", 
-    "416 requested range not satisfiable", "417 expectation failed", 
-    "500 internal server error", "501 not implemented", "502 bad gateway", 
-    "503 service unavailable", "504 gateway timeout", "505 http version not supported"
-    ])
-
+    "page not found",
+    "page could not be found",
+    "page does not exist",
+    "404 not found",
+    "error 404",
+    "problem loading page",
+    "content not available",
+    "content not found",
+    "no results found",
+    "no results available",
+    "resource not available",
+    "resource not found",
+    "not a valid page"
+    ])  
     if any(error in text for error in http_errors):
         return []
     
@@ -78,8 +75,15 @@ def extract_next_links(url, resp):
             hyperlinks.append(complete_link) # add the complete link to the list we will return
             unique_links.add(complete_link) # add it to the set of unique links (for the deliverable)
 
-    # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE
-   
+        # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE ------------------------------
+
+        # to get the subdomain and the count
+        if parsed.netloc.endswith("uci.edu"):
+            if parsed.netloc not in subdomain_count:
+                subdomain_count[parsed.netloc] = 1
+            else:
+                subdomain_count[parsed.netloc] += 1
+           
     tokens = tokenize(text) 
     word_freq = computeWordFrequencies(tokens)
 
@@ -157,11 +161,18 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         raise
 
-def print_summary(): # what we need for report
-    print("SUMMARY: -----------------------------------")
-    print(f"Total unique links: {len(unique_links)}")
-    print(f"Page with longest word count: {get_longest_page(word_count)}")
+def print_summary(output="summary.txt"):  
+    with open(output, "w") as file:
+        file.write("SUMMARY: -----------------------------------\n")
+        file.write(f"Total unique links: {len(unique_links)}\n")
+        file.write(f"Page with longest word count: {get_longest_page(word_count)}\n\n")
 
-    most_common_words = get_50_most_common(all_word_freq)
-    for word, freq in most_common_words:
-        print(f"{word}: {freq}")
+        most_common_words = get_50_most_common(all_word_freq)
+        file.write("Most Common Words:\n")
+        for word, freq in most_common_words:
+            file.write(f"{word}: {freq}\n")
+
+        file.write("Subdomain Counts:\n")
+        for subdomain, count in subdomain_count.items():
+            file.write(f"{subdomain}: {count}\n")
+
