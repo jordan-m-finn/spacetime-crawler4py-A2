@@ -38,6 +38,32 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
 
+    text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
+
+    # all the http errors we are going to check for on the page (from the list of errors in assignment spec)
+    http_errors = set([
+    "100 continue", "101 switching protocols",
+    "200 ok", "201 created", "202 accepted", 
+    "203 non-authoritative information", "204 no content", 
+    "205 reset content", "206 partial content",
+    "300 multiple choices", "301 moved permanently", 
+    "302 found", "303 see other", "304 not modified", 
+    "305 use proxy", "306 (unused)", "307 temporary redirect",
+    "400 bad request", "401 unauthorized", "402 payment required", 
+    "403 forbidden", "404 not found", "405 method not allowed", 
+    "406 not acceptable", "407 proxy authentication required", 
+    "408 request timeout", "409 conflict", "410 gone", 
+    "411 length required", "412 precondition failed", "413 request entity too large", 
+    "414 request-uri too long", "415 unsupported media type", 
+    "416 requested range not satisfiable", "417 expectation failed", 
+    "500 internal server error", "501 not implemented", "502 bad gateway", 
+    "503 service unavailable", "504 gateway timeout", "505 http version not supported"
+    ])
+
+    if any(error in text for error in http_errors):
+        return []
+    
+    # now we scrape the page for links
     potential_links = soup.find_all('a', href=True) # with the soup, find all the 'a' tags that have a href
     just_links = [a['href'] for a in potential_links] # get the hyperlinks themselves without the tags
 
@@ -53,8 +79,6 @@ def extract_next_links(url, resp):
             unique_links.add(complete_link) # add it to the set of unique links (for the deliverable)
 
     # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE
-
-    text = soup.get_text(separator=' ') # getting all the text from the soup and seperating it so we can use tokenizer
    
     tokens = tokenize(text) 
     word_freq = computeWordFrequencies(tokens)
@@ -106,6 +130,19 @@ def is_valid(url):
         if len(set(path_segments)) < len(path_segments) / 2:
             return False
         
+        # Filter out share (saw a lot of facebook and X redirects) 
+        if "share=" in parsed.query:
+            return False
+        
+        if "ical" in parsed.path: # avoid calendar (nothing on the page)
+            return False
+        
+         # prevent redundant media access on wiki pages since it keeps looping and it's the same
+        if "wiki.ics.uci.edu" in parsed.netloc and (
+            "do=media" in parsed.query or "image=" in parsed.query
+        ):
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -114,7 +151,7 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
