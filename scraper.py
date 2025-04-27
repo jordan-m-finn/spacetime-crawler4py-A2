@@ -55,7 +55,8 @@ def extract_next_links(url, resp):
     "no results available",
     "resource not available",
     "resource not found",
-    "not a valid page"
+    "not a valid page",
+    "The requested URL was not found on this server."
     ])  
     if any(error in text for error in http_errors):
         return []
@@ -71,7 +72,7 @@ def extract_next_links(url, resp):
         if parsed.fragment:
             complete_link = complete_link.split('#')[0]
 
-        if is_valid(complete_link): # making sure it is within the domains and paths specified
+        if is_valid(complete_link) and complete_link not in unique_links: # making sure it is within the domains and paths specified
             hyperlinks.append(complete_link) # add the complete link to the list we will return
             unique_links.add(complete_link) # add it to the set of unique links (for the deliverable)
 
@@ -137,10 +138,19 @@ def is_valid(url):
         if "share=" in parsed.query:
             return False
         
-        if "ical" in parsed.path: # avoid calendar (nothing on the page)
+        if "ical" in parsed.path or "ical" in parsed.query: # avoid calendar (nothing on the page)
             return False
         
-         # prevent redundant media access on wiki pages since it keeps looping and it's the same
+        if "do=diff" in parsed.path or "do=diff" in parsed.query: # show revisions of a page (not very important for info and very similar to each other)
+            return False
+        
+        if "idx=" in parsed.query: 
+            return False
+        
+        if "rev=" in parsed.query: # remove the pages showing revisions 
+            return False
+        
+        # prevent redundant media access on wiki pages since it keeps looping and it's the same
         if "wiki.ics.uci.edu" in parsed.netloc and (
             "do=media" in parsed.query or "image=" in parsed.query
         ):
@@ -154,7 +164,7 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics|apk|war|img|jpg|scm|mpg)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
@@ -172,6 +182,7 @@ def print_summary(output="summary.txt"):
             file.write(f"{word}: {freq}\n")
 
         file.write("Subdomain Counts:\n")
+        subdomain_count = dict(sorted(subdomain_count.items(), key=lambda item: item[0]))  # Sort by subdomain (key)
         for subdomain, count in subdomain_count.items():
             file.write(f"{subdomain}: {count}\n")
 
