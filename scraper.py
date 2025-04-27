@@ -10,6 +10,7 @@ from tokenizer import tokenize, computeWordFrequencies, get_longest_page, get_50
 unique_links = set() #to track URL's that we have already seen
 word_count = {} # to store the URL and the word count
 all_word_freq = {} # to store word frequency
+subdomain_count = {} # counting the subdomains for uci.edu
 
 
 def scraper(url, resp):
@@ -38,6 +39,29 @@ def extract_next_links(url, resp):
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
 
+    text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
+
+    # some common errors that we can check for on the page
+    http_errors = set([
+    "page not found",
+    "page could not be found",
+    "page does not exist",
+    "404 not found",
+    "error 404",
+    "problem loading page",
+    "content not available",
+    "content not found",
+    "no results found",
+    "no results available",
+    "resource not available",
+    "resource not found",
+    "not a valid page",
+    "The requested URL was not found on this server."
+    ])  
+    if any(error in text for error in http_errors):
+        return []
+    
+    # now we scrape the page for links
     potential_links = soup.find_all('a', href=True) # with the soup, find all the 'a' tags that have a href
     just_links = [a['href'] for a in potential_links] # get the hyperlinks themselves without the tags
 
@@ -48,14 +72,18 @@ def extract_next_links(url, resp):
         if parsed.fragment:
             complete_link = complete_link.split('#')[0]
 
-        if is_valid(complete_link): # making sure it is within the domains and paths specified
+        if is_valid(complete_link) and complete_link not in unique_links: # making sure it is within the domains and paths specified
             hyperlinks.append(complete_link) # add the complete link to the list we will return
             unique_links.add(complete_link) # add it to the set of unique links (for the deliverable)
 
-    # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE
-
-    text = soup.get_text(separator=' ') # getting all the text from the soup and seperating it so we can use tokenizer
-   
+        # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE ------------------------------
+            # to get the subdomain and the count
+            if parsed.netloc.endswith("uci.edu"):
+                if parsed.netloc not in subdomain_count:
+                    subdomain_count[parsed.netloc] = 1
+                else:
+                    subdomain_count[parsed.netloc] += 1
+           
     tokens = tokenize(text) 
     word_freq = computeWordFrequencies(tokens)
 
@@ -106,6 +134,28 @@ def is_valid(url):
         if len(set(path_segments)) < len(path_segments) / 2:
             return False
         
+        # Filter out share (saw a lot of facebook and X redirects) 
+        if "share=" in parsed.query:
+            return False
+        
+        if "ical" in parsed.path or "ical" in parsed.query: # avoid calendar (nothing on the page)
+            return False
+        
+        if "do=diff" in parsed.path or "do=diff" in parsed.query: # show revisions of a page (not very important for info and very similar to each other)
+            return False
+        
+        if "idx=" in parsed.query: 
+            return False
+        
+        if "rev=" in parsed.query: # remove the pages showing revisions 
+            return False
+        
+        # prevent redundant media access on wiki pages since it keeps looping and it's the same
+        if "wiki.ics.uci.edu" in parsed.netloc and (
+            "do=media" in parsed.query or "image=" in parsed.query
+        ):
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -114,17 +164,25 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics|apk|war|img|jpg|scm|mpg)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
 
-def print_summary(): # what we need for report
-    print("SUMMARY: -----------------------------------")
-    print(f"Total unique links: {len(unique_links)}")
-    print(f"Page with longest word count: {get_longest_page(word_count)}")
+def print_summary(output="summary.txt"):  
+    with open(output, "w") as file:
+        file.write("SUMMARY: -----------------------------------\n")
+        file.write(f"Total unique links: {len(unique_links)}\n")
+        file.write(f"Page with longest word count: {get_longest_page(word_count)}\n\n")
 
-    most_common_words = get_50_most_common(all_word_freq)
-    for word, freq in most_common_words:
-        print(f"{word}: {freq}")
+        most_common_words = get_50_most_common(all_word_freq)
+        file.write("Most Common Words:\n")
+        for word, freq in most_common_words:
+            file.write(f"{word}: {freq}\n")
+
+        file.write("Subdomain Counts:\n")
+        subdomain_count = dict(sorted(subdomain_count.items(), key=lambda item: item[0]))  # Sort by subdomain (key)
+        for subdomain, count in subdomain_count.items():
+            file.write(f"{subdomain}: {count}\n")
+
