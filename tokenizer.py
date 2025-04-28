@@ -64,7 +64,7 @@ def get_50_most_common(all_word_freq):
     "weren't", "what", "what's", "when", "when's", "where", "where's", "which",
     "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would",
     "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours",
-    "yourself", "yourselves"
+    "yourself", "yourselves", "t", "s"
     }
 
     clean_word_freq = {}
