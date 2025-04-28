@@ -61,6 +61,26 @@ def extract_next_links(url, resp):
     if any(error in text for error in http_errors):
         return []
     
+    # Check for authentication/login pages that require credentials
+    auth_indicators = set([
+    "login",
+    "log in",
+    "sign in",
+    "username",
+    "password",
+    "authentication",
+    "credentials",
+    "insufficient access privileges",
+    "access to information in these pages are restricted",
+    "please make sure to login",
+    "you are currently not logged in"
+    ])
+    
+    # If the page contains authentication indicators and has a form, it's likely a login page
+    if any(indicator in text.lower() for indicator in auth_indicators) and soup.find('form'):
+        print(f"Skipping authentication page: {url}")
+        return []
+    
     # now we scrape the page for links
     potential_links = soup.find_all('a', href=True) # with the soup, find all the 'a' tags that have a href
     just_links = [a['href'] for a in potential_links] # get the hyperlinks themselves without the tags
@@ -154,6 +174,15 @@ def is_valid(url):
         if "wiki.ics.uci.edu" in parsed.netloc and (
             "do=media" in parsed.query or "image=" in parsed.query
         ):
+            return False
+            
+        # Skip wiki pages that are likely to require authentication
+        if "wiki.ics.uci.edu" in parsed.netloc and (
+            "/doku.php/accounts:" in parsed.path or 
+            "/doku.php/login" in parsed.path or
+            "?do=login" in parsed.query
+        ):
+            print(f"Skipping restricted wiki page: {url}")
             return False
         
         return not re.match(
