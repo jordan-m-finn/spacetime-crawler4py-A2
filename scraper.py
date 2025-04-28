@@ -86,17 +86,17 @@ def extract_next_links(url, resp):
     just_links = [a['href'] for a in potential_links] # get the hyperlinks themselves without the tags
 
     for link in just_links:
-        
         complete_link = urljoin(resp.url, link) # make sure all the links are complete links 
 
         parsed = urlparse(complete_link) # parse the complete link and remove the fragment if it has one
         if parsed.fragment:
             complete_link = complete_link.split('#')[0]
 
-        unique_links.add(complete_link) # add it to the set of unique links we have seen
-
         if is_valid(complete_link) and complete_link not in unique_links: # making sure it is within the domains and paths specified
             hyperlinks.append(complete_link) # add the complete link to the list we will return
+            unique_links.add(complete_link)
+        else: 
+            unique_links.add(complete_link) # we still want to track the link even if we don't want to crawl it
 
         # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE ------------------------------
             # to get the subdomain and the count
