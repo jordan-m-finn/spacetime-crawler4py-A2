@@ -100,11 +100,11 @@ def extract_next_links(url, resp):
 
         # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE ------------------------------
             # to get the subdomain and the count
-            if parsed.netloc.endswith("uci.edu"):
-                if parsed.netloc not in subdomain_count:
-                    subdomain_count[parsed.netloc] = 1
-                else:
-                    subdomain_count[parsed.netloc] += 1
+        if parsed.netloc.endswith("uci.edu"):
+            if parsed.netloc not in subdomain_count:
+                subdomain_count[parsed.netloc] = 1
+            else:
+                subdomain_count[parsed.netloc] += 1
            
     tokens = tokenize(text) 
     word_freq = computeWordFrequencies(tokens)
