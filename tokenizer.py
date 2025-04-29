@@ -4,46 +4,8 @@ def tokenize(text_string):
     token_list = []
     token = []
 
-    alphanum = set("abcdefghijklmnopqrstuvwxyz0123456789")
+    alphanum = set("abcdefghijklmnopqrstuvwxyz0123456789'") # keep apostrophes now as well
 
-    for char in text_string:
-        if char.lower() in alphanum: # specify we only want english alphabet and numbers in tokens
-            token.append(char.lower())
-        else:
-            if token: # if not alphanumeric, see if the token is empty, if not empty add the token to the collection
-                token_string = ''.join(token)
-                token_list.append(token_string)
-                token = []
-
-    if token: # if the last character is alphanumeric, catch the token
-        token_string = ''.join(token)
-        token_list.append(token_string)
-
-    return token_list
-
-def computeWordFrequencies(token_list): 
-    word_freq={}
-
-    for token in token_list: 
-        if token not in word_freq: # if not in the dict add it with a count of one
-            word_freq[token]=1
-        else:
-            word_freq[token]+=1 #if in dict, increment everytime you see the same token
-    
-    return word_freq
-
-def get_longest_page(word_count): 
-    if not word_count:
-        return "N/A (no pages with words)"
-    longest_page = max(word_count, key=word_count.get)
-    return longest_page, word_count[longest_page]
-
-    #longest_page = max(word_count, key=word_count.get) # get the page with the most words
-    #return longest_page, word_count[longest_page] # return the page and the number of words in it
-
-def get_50_most_common(all_word_freq): 
-
-    # english stop words we want to exclude
     stop_words = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
     "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
@@ -64,16 +26,47 @@ def get_50_most_common(all_word_freq):
     "weren't", "what", "what's", "when", "when's", "where", "where's", "which",
     "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would",
     "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours",
-    "yourself", "yourselves", "t", "s"
+    "yourself", "yourselves"
     }
 
-    clean_word_freq = {}
+    for char in text_string:
+        if char.lower() in alphanum: # specify we only want english alphabet and numbers in tokens
+            token.append(char.lower())
+        else:
+            if token: # if not alphanumeric, see if the token is empty, if not empty, do a check
+                token_string = ''.join(token)
+                if token_string not in stop_words and len(token_string)>1: # check if the token is a stop word and greater than one character
+                    token_list.append(token_string)
+                token = [] # reset
 
-    for word in all_word_freq: # removing the stop words
-        if word not in stop_words:
-            clean_word_freq[word] = all_word_freq[word]
+    if token: # if the last character is alphanumeric, catch the token
+        token_string = ''.join(token)
+        if token_string not in stop_words and len(token_string)>1: # check if the token is a stop word and greater than one character
+            token_list.append(token_string)
+        token = [] # reset
 
-    sorted_word_freq = sorted(clean_word_freq.items(), key=lambda item: item[1], reverse=True) 
+    return token_list
+
+def computeWordFrequencies(token_list): 
+    word_freq={}
+
+    for token in token_list: 
+        if token not in word_freq: # if not in the dict add it with a count of one
+            word_freq[token]=1
+        else:
+            word_freq[token]+=1 #if in dict, increment everytime you see the same token
+    
+    return word_freq
+
+def get_longest_page(word_count): 
+    if not word_count:
+        return "N/A (no pages with words)"
+    longest_page = max(word_count, key=word_count.get)  # get the page with the most words
+    return longest_page, word_count[longest_page] # return the page and the number of words in it
+
+def get_50_most_common(all_word_freq): 
+    
+    sorted_word_freq = sorted(all_word_freq.items(), key=lambda item: item[1], reverse=True) 
     most_common = sorted_word_freq[:50]
 
     return most_common
