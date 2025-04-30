@@ -142,8 +142,18 @@ def is_valid(url):
         if len(url) > 2000:
             return False
 
-        # check for crawler traps
+        # check for crawler traps - calendars and date-based URLs
         if re.search(r"calendar|/>(year|month|day)=\d+", parsed.path.lower()):
+            return False
+            
+        # Enhanced event page detection - avoid crawling too many event pages
+        if re.search(r"events?/(\d{4}|\d{2})/(\d{2})/(\d{2})|events?/category|events?/tag|events?/\d+|events?/page/\d+|events?/day/|events?/month/|events?/week/|events?/archive", parsed.path.lower()):
+            print(f"Skipping event page: {url}")
+            return False
+            
+        # Detect date-based URL patterns that often lead to crawler traps
+        if re.search(r"/(20\d{2})/(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])|/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)|(january|february|march|april|may|june|july|august|september|october|november|december)/", parsed.path.lower()):
+            print(f"Skipping date-based URL: {url}")
             return False
         
         # check patterns that may indicate a crawler trap
@@ -180,8 +190,9 @@ def is_valid(url):
         ):
             return False
         
-        # skip this trap, going through a calendar
-        if "wics.ics.uci.edu" in parsed.netloc and "events/category/boothing/day/" in parsed.path:
+        # Skip specific event page patterns for known domains
+        if any(domain in parsed.netloc for domain in ["wics.ics.uci.edu", "isg.ics.uci.edu", "ics.uci.edu"]) and re.search(r"events?/|calendar/|schedule/", parsed.path.lower()):
+            print(f"Skipping domain-specific event page: {url}")
             return False
             
         # Skip wiki pages that are likely to require authentication
