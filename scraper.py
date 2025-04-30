@@ -208,6 +208,7 @@ def is_valid(url):
         raise
 
 def print_summary(output="summary.txt"):  
+    global subdomain_count, unique_links, word_count, all_word_freq
     with open(output, "w") as file:
         file.write("SUMMARY: -----------------------------------\n")
         file.write(f"Total unique links: {len(unique_links)}\n")
@@ -219,7 +220,7 @@ def print_summary(output="summary.txt"):
             file.write(f"{word}: {freq}\n")
 
         file.write("Subdomain Counts:\n")
-        subdomain_count = dict(sorted(subdomain_count.items(), key=lambda item: item[0]))  # Sort by subdomain (key)
-        for subdomain, count in subdomain_count.items():
+        sorted_subdomains = dict(sorted(subdomain_count.items(), key=lambda item: item[0]))  # Sort by subdomain (key)
+        for subdomain, count in sorted_subdomains.items():
             file.write(f"{subdomain}: {count}\n")
 
