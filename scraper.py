@@ -181,7 +181,7 @@ def is_valid(url):
             return False
         
         # skip this trap, going through a calendar
-        if "wics.ics.uci.edu" in parsed.netloc and "events/category/boothing/day" in parsed.path:
+        if "wics.ics.uci.edu" in parsed.netloc and "events/category/boothing/day/" in parsed.path:
             return False
             
         # Skip wiki pages that are likely to require authentication
