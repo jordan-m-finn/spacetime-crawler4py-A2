@@ -175,10 +175,13 @@ def is_valid(url):
         if "action=download" in parsed.query: # avoid downloading files
             return False
         
-        # prevent redundant media access on wiki pages since it keeps looping and it's the same
         if "wiki.ics.uci.edu" in parsed.netloc and (
             "do=media" in parsed.query or "image=" in parsed.query
         ):
+            return False
+        
+        # skip this trap, going through a calendar
+        if "wics.ics.uci.edu" in parsed.netloc and "events/category/boothing/day" in parsed.path:
             return False
             
         # Skip wiki pages that are likely to require authentication
