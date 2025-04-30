@@ -165,6 +165,12 @@ def is_valid(url):
         # check for any repetitions that may indicate a crawler trap
         if len(set(path_segments)) < len(path_segments) / 2:
             return False
+            
+        # Check for adjacent repeated path segments (like 'EMWS09/EMWS09')
+        for i in range(1, len(path_segments)):
+            if path_segments[i] and path_segments[i] == path_segments[i-1]:
+                print(f"Skipping URL with adjacent repeated path segments: {url}")
+                return False
         
         # Filter out share (saw a lot of facebook and X redirects) 
         if "share=" in parsed.query:
