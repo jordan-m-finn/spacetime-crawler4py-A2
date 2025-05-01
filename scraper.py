@@ -1,4 +1,6 @@
 import re
+import os
+import shelve
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup # PLEASE INSTALL THIS PACKAGE FOR HTML PARSING
 #by running 'pip install beautifulsoup4' in terminal
@@ -7,10 +9,29 @@ from bs4 import BeautifulSoup # PLEASE INSTALL THIS PACKAGE FOR HTML PARSING
 
 from tokenizer import tokenize, computeWordFrequencies, get_longest_page, get_50_most_common
 
+# Initialize global variables
 unique_links = set() #to track URL's that we have already seen
 word_count = {} # to store the URL and the word count
 all_word_freq = {} # to store word frequency
 subdomain_count = {} # counting the subdomains for uci.edu
+
+# Try to load existing data if available
+def _init_data():
+    global unique_links, word_count, all_word_freq, subdomain_count
+    data_file = "crawler_data.shelve"
+    if os.path.exists(data_file + ".dat"):
+        try:
+            with shelve.open(data_file) as data:
+                unique_links = data.get('unique_links', set())
+                word_count = data.get('word_count', {})
+                all_word_freq = data.get('all_word_freq', {})
+                subdomain_count = data.get('subdomain_count', {})
+                print(f"Initialized with existing data: {len(unique_links)} unique links")
+        except Exception as e:
+            print(f"Error loading existing data: {e}")
+
+# Initialize data when module is loaded
+_init_data()
 
 
 def scraper(url, resp):
@@ -224,12 +245,49 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         raise
 
+def save_crawler_data(output="crawler_data.shelve"):
+    """Save crawler data to a shelve file for persistence between runs"""
+    global subdomain_count, unique_links, word_count, all_word_freq
+    try:
+        with shelve.open(output) as data:
+            data['unique_links'] = unique_links
+            data['word_count'] = word_count
+            data['all_word_freq'] = all_word_freq
+            data['subdomain_count'] = subdomain_count
+        print(f"Saved crawler data: {len(unique_links)} unique links")
+    except Exception as e:
+        print(f"Error saving crawler data: {e}")
+
+def load_crawler_data(input_file="crawler_data.shelve"):
+    """Load crawler data from a shelve file"""
+    global subdomain_count, unique_links, word_count, all_word_freq
+    
+    if os.path.exists(input_file + ".dat"):  # Check if the shelve file exists
+        try:
+            with shelve.open(input_file) as data:
+                unique_links.update(data.get('unique_links', set()))
+                word_count.update(data.get('word_count', {}))
+                all_word_freq.update(data.get('all_word_freq', {}))
+                subdomain_count.update(data.get('subdomain_count', {}))
+            print(f"Loaded crawler data: {len(unique_links)} unique links")
+        except Exception as e:
+            print(f"Error loading crawler data: {e}")
+
 def print_summary(output="summary.txt"):  
     global subdomain_count, unique_links, word_count, all_word_freq
+    
+    # No need to save/load here as it's handled in launch.py
+    
     with open(output, "w") as file:
         file.write("SUMMARY: -----------------------------------\n")
         file.write(f"Total unique links: {len(unique_links)}\n")
-        file.write(f"Page with longest word count: {get_longest_page(word_count)}\n\n")
+        
+        longest_page_info = get_longest_page(word_count)
+        if longest_page_info == "N/A (no pages with words)":
+            file.write(f"Page with longest word count: {longest_page_info}\n\n")
+        else:
+            page_url, count = longest_page_info
+            file.write(f"Page with longest word count: {page_url} ({count} words)\n\n")
 
         most_common_words = get_50_most_common(all_word_freq)
         file.write("Most Common Words:\n")
@@ -240,4 +298,5 @@ def print_summary(output="summary.txt"):
         sorted_subdomains = dict(sorted(subdomain_count.items(), key=lambda item: item[0]))  # Sort by subdomain (key)
         for subdomain, count in sorted_subdomains.items():
             file.write(f"{subdomain}: {count}\n")
-
+        
+        print(f"Summary written to {output}")
