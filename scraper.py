@@ -37,6 +37,8 @@ def extract_next_links(url, resp):
 
     hyperlinks = []
 
+    global unique_links, word_count, all_word_freq, subdomain_count # to make sure these are global and not local
+
     soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
 
     text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
