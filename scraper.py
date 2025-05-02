@@ -35,13 +35,16 @@ def extract_next_links(url, resp):
     
     print(f"In extract_next_links: {url}")
 
-    hyperlinks = []
-
     global unique_links, word_count, all_word_freq, subdomain_count # to make sure these are global and not local
+    
+    hyperlinks = []
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
 
     text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
+
+    current_url = resp.url.split('#')[0] # get the current url from the response and make sure fragment free
+    unique_links.add(current_url) 
 
     # some common errors that we can check for on the page
     http_errors = set([
@@ -94,11 +97,8 @@ def extract_next_links(url, resp):
         if parsed.fragment:
             complete_link = complete_link.split('#')[0]
 
-        if is_valid(complete_link) and complete_link not in unique_links: # making sure it is within the domains and paths specified
+        if is_valid(complete_link): # making sure it is within the domains and paths specified
             hyperlinks.append(complete_link) # add the complete link to the list we will return
-            unique_links.add(complete_link)
-        else: 
-            unique_links.add(complete_link) # we still want to track the link even if we don't want to crawl it
 
         # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE ------------------------------
             # to get the subdomain and the count
