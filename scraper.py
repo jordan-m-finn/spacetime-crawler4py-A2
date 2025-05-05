@@ -35,6 +35,8 @@ def extract_next_links(url, resp):
     
     print(f"In extract_next_links: {url}")
 
+    global unique_links, word_count, all_word_freq, subdomain_count # to make sure these are global and not local
+    
     hyperlinks = []
 
     soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
@@ -59,6 +61,7 @@ def extract_next_links(url, resp):
     "the requested URL was not found on this server."
     ])  
     if any(error in text for error in http_errors):
+        print(f"Skipping dead page: {url}")
         return []
     
     # Check for authentication/login pages that require credentials
@@ -92,11 +95,9 @@ def extract_next_links(url, resp):
         if parsed.fragment:
             complete_link = complete_link.split('#')[0]
 
-        if is_valid(complete_link) and complete_link not in unique_links: # making sure it is within the domains and paths specified
+        if is_valid(complete_link): # making sure it is within the domains and paths specified
             hyperlinks.append(complete_link) # add the complete link to the list we will return
-            unique_links.add(complete_link)
-        else: 
-            unique_links.add(complete_link) # we still want to track the link even if we don't want to crawl it
+            unique_links.add(complete_link) 
 
         # ALL CODE BELOW THIS LINE IS FOR DELIVERABLE ------------------------------
             # to get the subdomain and the count
@@ -110,12 +111,15 @@ def extract_next_links(url, resp):
     word_freq = computeWordFrequencies(tokens)
 
     word_count[resp.url] = len(tokens) # to get the word count for the page
+    print (f"Word count for {resp.url}: {word_count[resp.url]}")
     
     for word in word_freq: # sum up word frequencies
-        if word in word_freq:
+        if word in all_word_freq:
             all_word_freq[word] = all_word_freq.get(word, 0) + word_freq[word]
         else:
             all_word_freq[word] = word_freq[word]
+
+    print(f"Current URL count: {len(unique_links)}\n")
 
     return hyperlinks
 
@@ -224,7 +228,7 @@ def is_valid(url):
         print ("TypeError for ", parsed)
         raise
 
-def print_summary(output="summary.txt"):  
+def print_summary(output="output.txt"):  
     global subdomain_count, unique_links, word_count, all_word_freq
     with open(output, "w") as file:
         file.write("SUMMARY: -----------------------------------\n")

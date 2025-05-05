@@ -6,6 +6,7 @@ def tokenize(text_string):
 
     alphanum = set("abcdefghijklmnopqrstuvwxyz0123456789'") # keep apostrophes now as well
 
+    # list is from assignment 1 writeup link
     stop_words = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
     "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
