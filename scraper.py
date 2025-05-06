@@ -33,14 +33,22 @@ def extract_next_links(url, resp):
         print(f"Error {resp.status} for {url}: {resp.error}")
         return []
     
+    if not resp.raw_response or not resp.raw_response.content: 
+        print(f"Error with response for {url}")
+        return []
+    
     print(f"In extract_next_links: {url}")
 
     global unique_links, word_count, all_word_freq, subdomain_count # to make sure these are global and not local
     
     hyperlinks = []
-
-    soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
-
+    
+    try:
+        soup = BeautifulSoup(resp.raw_response.content, 'lxml') # parse the content of the page 
+    except Exception as e:
+        print(f"Error parsing HTML for {url}: {e}")
+        return []
+    
     text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
 
     # some common errors that we can check for on the page
@@ -206,6 +214,12 @@ def is_valid(url):
         if "redirect_to" in parsed.query or "login.php" in parsed.path: # avoid redirects and log in
             return False
         
+        if re.search(r"\.(java|py|js)$", parsed.path.lower()): # avoiding these code files
+            return False
+        
+        if "git" in parsed.path or "git" in parsed.query: # avoid git pages
+            return False
+        
         # Skip specific event page patterns for known domains
         if any(domain in parsed.netloc for domain in ["wics.ics.uci.edu", "isg.ics.uci.edu", "ics.uci.edu"]) and re.search(r"events?/|calendar/|schedule/", parsed.path.lower()):
             print(f"Skipping domain-specific event page: {url}")
@@ -228,7 +242,7 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics|apk|war|img|jpg|scm|mpg|ppsx|frk)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics|apk|war|img|jpg|scm|mpg|ppsx|frk|shar|lif|php)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
@@ -247,7 +261,7 @@ def print_summary(output="output.txt"):
             file.write(f"{word}: {freq}\n")
 
         file.write("Subdomain Counts:\n")
-        sorted_subdomains = dict(sorted(subdomain_count.items(), key=lambda item: item[0]))  # Sort by subdomain (key)
+        sorted_subdomains = dict(sorted(subdomain_count.items(), key=lambda item: item[0].lower()))  # Sort by subdomain (key)
         for subdomain, count in sorted_subdomains.items():
             file.write(f"{subdomain}: {count}\n")
 
