@@ -51,6 +51,11 @@ def extract_next_links(url, resp):
     
     text = soup.get_text(separator=' ').lower() # getting all the text from the soup and seperating it so we can process the content
 
+    tokens = tokenize(text) 
+    if len(tokens) < 15: 
+        print(f"Skipping page with low information: {url}")
+        return []
+
     # some common errors that we can check for on the page
     http_errors = set([
     "page not found",
@@ -115,7 +120,6 @@ def extract_next_links(url, resp):
             else:
                 subdomain_count[parsed.netloc] += 1
            
-    tokens = tokenize(text) 
     word_freq = computeWordFrequencies(tokens)
 
     word_count[resp.url] = len(tokens) # to get the word count for the page
