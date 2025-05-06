@@ -203,6 +203,9 @@ def is_valid(url):
         if "pdf" in parsed.path: # avoid pdf in paths
             return False
         
+        if "redirect_to" in parsed.query or "login.php" in parsed.path: # avoid redirects and log in
+            return False
+        
         # Skip specific event page patterns for known domains
         if any(domain in parsed.netloc for domain in ["wics.ics.uci.edu", "isg.ics.uci.edu", "ics.uci.edu"]) and re.search(r"events?/|calendar/|schedule/", parsed.path.lower()):
             print(f"Skipping domain-specific event page: {url}")
@@ -225,7 +228,7 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics|apk|war|img|jpg|scm|mpg|ppsx)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz|ics|apk|war|img|jpg|scm|mpg|ppsx|frk)$", parsed.path.lower())
 
     except TypeError:
         print ("TypeError for ", parsed)
