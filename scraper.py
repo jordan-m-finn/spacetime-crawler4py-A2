@@ -238,6 +238,10 @@ def is_valid(url):
             print(f"Skipping restricted wiki page: {url}")
             return False
         
+        if re.search(r"[?&]C=(N|S);O=(A|D)", parsed.query): # seen a lot with eppstein, skip these (not a lot of info)
+            print(f"Skipping directory: {url}")
+            return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
