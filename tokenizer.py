@@ -4,7 +4,7 @@ def tokenize(text_string):
     token_list = []
     token = []
 
-    alphanum = set("abcdefghijklmnopqrstuvwxyz0123456789'") # keep apostrophes now as well
+    alphanum = set("abcdefghijklmnopqrstuvwxyz'") # keep apostrophes now as well
 
     # list is from assignment 1 writeup link
     stop_words = {
@@ -27,7 +27,7 @@ def tokenize(text_string):
     "weren't", "what", "what's", "when", "when's", "where", "where's", "which",
     "while", "who", "who's", "whom", "why", "why's", "with", "won't", "would",
     "wouldn't", "you", "you'd", "you'll", "you're", "you've", "your", "yours",
-    "yourself", "yourselves"
+    "yourself", "yourselves", "ics", "uci"
     }
 
     for char in text_string:
